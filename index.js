@@ -95,6 +95,11 @@ function updateInteractionState(disabled) {
     document.getElementById("stopBtn").style.display = isAutoPlayMode
         ? "block"
         : "none"
+
+    // Close search results when interaction is disabled
+    if (disabled) {
+        hideSearchResults()
+    }
 }
 
 function handleNext() {
@@ -112,79 +117,99 @@ function handlePrevious() {
 }
 
 function handleSearch() {
-    if (cooldownActive && !isAutoPlayMode) return
-
     const searchTerm = document
         .getElementById("searchInput")
         .value.toLowerCase()
-    let bestMatch = null
-    let bestScore = -Infinity
+        .trim()
+    if (searchTerm === "") {
+        hideSearchResults()
+        return
+    }
 
+    const searchResults = []
+
+    let totalResults = 0
     words.forEach((wordObj, index) => {
         const word = wordObj.word.toLowerCase()
-        let score
-
-        if (word === searchTerm) {
-            score = Infinity
-        } else if (word.startsWith(searchTerm)) {
-            score = 100 + searchTerm.length / word.length
-        } else if (word.includes(searchTerm)) {
-            score = 10 + searchTerm.length / word.length
-        } else {
-            const distance = levenshteinDistance(word, searchTerm)
-            if (distance <= 3) {
-                score = 1 + 1 / (distance + 1)
-            } else {
-                score = -Infinity
-            }
+        if (word.startsWith(searchTerm)) {
+            searchResults.push({ index, word: wordObj.word })
+            totalResults++
         }
-
-        if (score > bestScore) {
-            bestScore = score
-            bestMatch = { index, word: wordObj.word }
+        if (totalResults >= 50) {
+            return
         }
     })
-
-    if (bestMatch) {
-        currentIndex = bestMatch.index
-        displayWord()
-        document.getElementById("searchInput").value = ""
-        if (bestScore === Infinity) {
-            console.log("Exact match found!")
-        } else {
-            console.log("Best partial match found.")
-        }
-    } else {
-        alert("No matching word found in dictionary")
+    if (searchResults.length === 0) {
+        words.forEach((wordObj, index) => {
+            const word = wordObj.word.toLowerCase()
+            if (word.includes(searchTerm)) {
+                searchResults.push({ index, word: wordObj.word })
+                totalResults++
+            }
+            if (totalResults >= 50) {
+                return
+            }
+        })
     }
+    displaySearchResults(searchResults, searchTerm)
 }
 
-function levenshteinDistance(a, b) {
-    const matrix = []
+function displaySearchResults(results, searchTerm) {
+    const searchResultsContainer = document.getElementById(
+        "searchResultsContainer"
+    )
+    searchResultsContainer.innerHTML = ""
 
-    for (let i = 0; i <= b.length; i++) {
-        matrix[i] = [i]
+    if (results.length === 0) {
+        searchResultsContainer.innerHTML =
+            "<div class='search-result-item'>No matching words found</div>"
+    } else {
+        results.slice(0, 50).forEach((result) => {
+            const resultItem = document.createElement("div")
+            resultItem.className = "search-result-item"
+            resultItem.innerHTML = highlightSearchTerm(result.word, searchTerm)
+            resultItem.addEventListener("click", () =>
+                selectSearchResult(result.index)
+            )
+            searchResultsContainer.appendChild(resultItem)
+        })
     }
 
-    for (let j = 0; j <= a.length; j++) {
-        matrix[0][j] = j
-    }
+    showSearchResults()
+}
 
-    for (let i = 1; i <= b.length; i++) {
-        for (let j = 1; j <= a.length; j++) {
-            if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1]
-            } else {
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j - 1] + 1,
-                    matrix[i][j - 1] + 1,
-                    matrix[i - 1][j] + 1
-                )
-            }
-        }
-    }
+function highlightSearchTerm(word, searchTerm) {
+    const regex = new RegExp(`(${searchTerm})`, "gi")
+    return word.replace(regex, '<span class="highlight">$1</span>')
+}
 
-    return matrix[b.length][a.length]
+function selectSearchResult(index) {
+    currentIndex = index
+    displayWord()
+    hideSearchResults()
+}
+
+function showSearchResults() {
+    document.getElementById("searchBlurOverlay").classList.add("active")
+    document.getElementById("searchResultsContainer").style.display = "block"
+}
+
+function hideSearchResults() {
+    document.getElementById("searchBlurOverlay").classList.remove("active")
+    document.getElementById("searchResultsContainer").style.display = "none"
+}
+
+function showSearchOverlay() {
+    document.getElementById("searchBlurOverlay").classList.add("active")
+}
+
+function hideSearchOverlay() {
+    if (
+        document.getElementById("searchResultsContainer").style.display ===
+        "none"
+    ) {
+        document.getElementById("searchBlurOverlay").classList.remove("active")
+    }
 }
 
 function stopAutoPlay() {
@@ -272,6 +297,29 @@ const card = document.getElementById("card")
 card.addEventListener("touchstart", handleTouchStart)
 card.addEventListener("touchmove", handleTouchMove)
 card.addEventListener("touchend", handleTouchEnd)
+
+// Updated event listeners for search input
+const searchInput = document.getElementById("searchInput")
+searchInput.addEventListener("focus", showSearchOverlay)
+searchInput.addEventListener("blur", hideSearchOverlay)
+searchInput.addEventListener("input", handleSearch) // Add this line to trigger search on input
+
+// Close search results when clicking outside
+document.addEventListener("click", function (event) {
+    const searchResultsContainer = document.getElementById(
+        "searchResultsContainer"
+    )
+    const searchInput = document.getElementById("searchInput")
+    const searchBtn = document.getElementById("searchBtn")
+
+    if (
+        !searchResultsContainer.contains(event.target) &&
+        event.target !== searchInput &&
+        event.target !== searchBtn
+    ) {
+        hideSearchResults()
+    }
+})
 
 loadWords()
 
