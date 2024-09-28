@@ -1,7 +1,7 @@
 let words = []
 let currentIndex = 0
 let cooldownActive = false
-const cooldownDuration = 10000 // 10 seconds in milliseconds
+let cooldownDuration = 10000 // 10 seconds in milliseconds
 let isTimerMode = false
 let isAutoPlayMode = false
 let autoPlayTimeout
