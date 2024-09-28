@@ -10,11 +10,10 @@ let progressInterval
 async function loadWords() {
     try {
         document.getElementById("word").textContent = "Loading..."
-        const response = await fetch(
-            "https://raw.githubusercontent.com/notshekhar/dictionary/refs/heads/main/dictionary.csv"
-        )
+        const csvPath = basePath + "/dictionary.csv"
+        console.log("Loading dictionary from:", csvPath)
+        const response = await fetch(csvPath)
         const csvText = await response.text()
-        console.log(csvText)
         wordsData = csvText.split("\n").map((line) => {
             const [word, type, definition] = line.split(",").map((str) => {
                 return str.replace(/"/g, "").replace(/\n/g, "")
