@@ -89,7 +89,14 @@ function updateInteractionState(disabled) {
     document.getElementById("nextBtn").disabled = disabled
     document.getElementById("searchBtn").disabled = disabled
     document.getElementById("searchInput").disabled = disabled
-    document.getElementById("blurOverlay").classList.toggle("active", disabled)
+    document.getElementById("blurOverlay").style.display = disabled
+        ? "block"
+        : "none"
+
+    // Update this line to toggle the 'hidden' class on the search container
+    document
+        .getElementById("searchContainer")
+        .classList.toggle("hidden", disabled)
 
     // Always show the stop button during auto-play, regardless of the disabled state
     document.getElementById("stopBtn").style.display = isAutoPlayMode

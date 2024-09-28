@@ -56,6 +56,7 @@
                 display: flex;
                 flex-direction: column;
                 position: relative;
+                z-index: 1; /* Ensure container is above the blur overlay */
             }
             .content {
                 flex-grow: 1;
@@ -63,7 +64,7 @@
                 flex-direction: column;
                 justify-content: center;
                 overflow-y: auto;
-                z-index: 2;
+                z-index: 2; /* Ensure content is above the blur overlay */
             }
             .card {
                 background-color: white;
@@ -113,7 +114,11 @@
                 display: flex;
                 margin-bottom: 20px;
                 position: relative;
-                z-index: 4;
+                z-index: 3; /* Place search container above content when visible */
+            }
+            .search-container.hidden {
+                visibility: hidden;
+                z-index: 0; /* Place hidden search container below everything */
             }
             .search-input {
                 flex-grow: 1;
@@ -157,7 +162,7 @@
                 cursor: not-allowed;
             }
             .blur-overlay {
-                position: absolute;
+                position: fixed;
                 top: 0;
                 left: 0;
                 right: 0;
@@ -166,10 +171,7 @@
                 backdrop-filter: blur(5px);
                 -webkit-backdrop-filter: blur(5px);
                 display: none;
-                z-index: 2;
-            }
-            .blur-overlay.active {
-                display: block;
+                z-index: 0; /* Place blur overlay below the container */
             }
             .search-blur-overlay {
                 position: absolute;
@@ -227,7 +229,7 @@
                 cursor: pointer;
                 font-weight: bold;
                 display: none;
-                z-index: 3;
+                z-index: 4; /* Ensure stop button is always on top */
             }
             .search-results-container {
                 position: absolute;
@@ -260,7 +262,7 @@
         <div class="container">
             <div class="blur-overlay" id="blurOverlay"></div>
             <div class="search-blur-overlay" id="searchBlurOverlay"></div>
-            <div class="search-container">
+            <div class="search-container" id="searchContainer">
                 <input
                     type="text"
                     class="search-input"
@@ -269,7 +271,10 @@
                 />
                 <button class="search-btn" id="searchBtn">Search</button>
             </div>
-            <div class="search-results-container" id="searchResultsContainer"></div>
+            <div
+                class="search-results-container"
+                id="searchResultsContainer"
+            ></div>
             <div class="mode-selector">
                 <div class="radio-group">
                     <input
