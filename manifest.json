@@ -2,7 +2,7 @@
     "name": "Dictionary",
     "short_name": "Dictionary",
     "description": "Dictionary App",
-    "start_url": "/",
+    "start_url": "/dictionary",
     "display": "standalone",
     "background_color": "#f0f2f5",
     "theme_color": "#1877f2",
