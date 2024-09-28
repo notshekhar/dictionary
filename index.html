@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta
+            name="viewport"
+            content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+        <title>Dictionary App</title>
+        <link rel="manifest" href="/manifest.json">
+        <style>
+            * {
+                box-sizing: border-box;
+                user-select: none;
+                -webkit-user-select: none;
+                -moz-user-select: none;
+                -ms-user-select: none;
+            }
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                overflow: hidden;
+                touch-action: manipulation;
+                -ms-touch-action: manipulation;
+            }
+            body {
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI",
+                    Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans",
+                    "Helvetica Neue", sans-serif;
+                background-color: #f0f2f5;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                -webkit-text-size-adjust: 100%;
+                -moz-text-size-adjust: 100%;
+                -ms-text-size-adjust: 100%;
+                text-size-adjust: 100%;
+            }
+            .container {
+                width: 100%;
+                max-width: 400px;
+                height: 100%;
+                padding: 20px;
+                display: flex;
+                flex-direction: column;
+                position: relative;
+            }
+            .content {
+                flex-grow: 1;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                overflow-y: auto;
+                z-index: 2;
+            }
+            .card {
+                background-color: white;
+                border-radius: 12px;
+                padding: 20px;
+                margin-bottom: 20px;
+                width: 100%;
+                border: 2px solid #e4e6eb;
+                transition: transform 0.3s ease, border-color 0.3s ease;
+                position: relative;
+                overflow: hidden;
+            }
+            .card.timer-active {
+                border-color: #ffd700;
+            }
+            .word {
+                font-size: 28px;
+                font-weight: bold;
+                margin-bottom: 5px;
+                color: #1c1e21;
+            }
+            .definition {
+                font-size: 16px;
+                color: #65676b;
+                margin-bottom: 20px;
+                line-height: 1.4;
+            }
+            .navigation {
+                display: flex;
+                justify-content: space-between;
+                margin-top: auto;
+            }
+            .nav-btn {
+                background-color: white;
+                color: #1c1e21;
+                border: 1px solid #d3d5d9;
+                padding: 10px 20px;
+                border-radius: 6px;
+                cursor: pointer;
+                font-weight: 500;
+                width: 48%;
+            }
+            .nav-btn:hover {
+                background-color: #f0f2f5;
+            }
+            .search-container {
+                display: flex;
+                margin-bottom: 20px;
+            }
+            .search-input {
+                flex-grow: 1;
+                padding: 10px 15px;
+                border: 1px solid #ddd;
+                border-radius: 6px 0 0 6px;
+                font-size: 14px;
+                background-color: white;
+            }
+            .search-btn {
+                background-color: #1877f2;
+                color: white;
+                border: 1px solid #1877f2;
+                padding: 10px 20px;
+                border-radius: 0 6px 6px 0;
+                cursor: pointer;
+                font-weight: 500;
+            }
+            .search-btn:hover {
+                background-color: #166fe5;
+                border-color: #166fe5;
+            }
+            .progress-container {
+                position: absolute;
+                bottom: 0;
+                left: 0;
+                width: 100%;
+                height: 5px;
+                background-color: transparent;
+                overflow: hidden;
+            }
+            .progress-bar {
+                width: 0%;
+                height: 100%;
+                background-color: #ffd700;
+                transition: width 0.1s linear;
+            }
+            .nav-btn:disabled {
+                background-color: #e0e0e0;
+                color: #999;
+                cursor: not-allowed;
+            }
+            .blur-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background-color: rgba(255, 255, 255, 0.5);
+                backdrop-filter: blur(5px);
+                -webkit-backdrop-filter: blur(5px);
+                display: none;
+                z-index: 2;
+            }
+            .blur-overlay.active {
+                display: block;
+            }
+            .mode-selector {
+                display: flex;
+                justify-content: center;
+                margin-bottom: 20px;
+            }
+            .mode-selector .radio-group {
+                display: flex;
+                background-color: #e0e0e0;
+                border-radius: 20px;
+                padding: 4px;
+            }
+            .mode-selector input[type="radio"] {
+                display: none;
+            }
+            .mode-selector label {
+                padding: 8px 16px;
+                font-size: 14px;
+                color: #5f6368;
+                cursor: pointer;
+                border-radius: 16px;
+                transition: all 0.3s ease;
+            }
+            .mode-selector input[type="radio"]:checked + label {
+                background-color: white;
+                color: #1a73e8;
+                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12),
+                    0 1px 2px rgba(0, 0, 0, 0.24);
+            }
+            .stop-button {
+                position: absolute;
+                bottom: 20px;
+                left: 50%;
+                transform: translateX(-50%);
+                background-color: red;
+                color: white;
+                border: none;
+                padding: 10px 20px;
+                border-radius: 5px;
+                cursor: pointer;
+                font-weight: bold;
+                display: none;
+                z-index: 3; /* Ensure it's above the blur overlay */
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="blur-overlay" id="blurOverlay"></div>
+            <div class="mode-selector">
+                <div class="radio-group">
+                    <input
+                        type="radio"
+                        id="normalMode"
+                        name="mode"
+                        value="normal"
+                        checked
+                    />
+                    <label for="normalMode">Basic</label>
+                    <input
+                        type="radio"
+                        id="timerMode"
+                        name="mode"
+                        value="timer"
+                    />
+                    <label for="timerMode">Timed</label>
+                    <input
+                        type="radio"
+                        id="autoplayMode"
+                        name="mode"
+                        value="autoplay"
+                    />
+                    <label for="autoplayMode">AutoPlay</label>
+                </div>
+            </div>
+            <div class="search-container">
+                <input
+                    type="text"
+                    class="search-input"
+                    id="searchInput"
+                    placeholder="Search for a word"
+                />
+                <button class="search-btn" id="searchBtn">Search</button>
+            </div>
+            <div class="content">
+                <div class="card" id="card">
+                    <div class="word" id="word">Hello</div>
+                    <div class="definition" id="definition">
+                        An expression of greeting
+                    </div>
+                    <div class="progress-container">
+                        <div class="progress-bar" id="progressBar"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="navigation">
+                <button class="nav-btn" id="prevBtn">Previous</button>
+                <button class="nav-btn" id="nextBtn">Next</button>
+            </div>
+        </div>
+        <button id="stopBtn" class="stop-button">Stop Auto-play</button>
+        <script src="./index.js"></script>
+        <script>
+            if ("serviceWorker" in navigator) {
+                window.addEventListener("load", () => {
+                    navigator.serviceWorker.register("/service-worker.js").then(
+                        (registration) => {
+                            console.log(
+                                "ServiceWorker registration successful with scope: ",
+                                registration.scope
+                            )
+                        },
+                        (err) => {
+                            console.log(
+                                "ServiceWorker registration failed: ",
+                                err
+                            )
+                        }
+                    )
+                })
+            }
+        </script>
+    </body>
+</html>
